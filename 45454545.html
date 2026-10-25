@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="每日打卡">
+<meta name="theme-color" content="#0d0f14">
+<title>每日打卡</title>
+<style>
+:root{
+  --bg:#0d0f14; --bg-elev:#14181f; --card:#1a1f29; --card-2:#232a36;
+  --text:#e9edf5; --text-2:#8b94a8; --line:#262c38;
+  --accent:#5b8cff; --green:#35c77b; --amber:#ffb020; --red:#ff5d5d;
+  --tab-bg:rgba(13,15,20,.88);
+}
+[data-theme="light"]{
+  --bg:#f2f4f8; --bg-elev:#ffffff; --card:#ffffff; --card-2:#eef1f6;
+  --text:#111827; --text-2:#6b7280; --line:#e3e7ee;
+  --tab-bg:rgba(255,255,255,.92);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+[hidden]{display:none!important;} /* 修复隐藏失效 */
+html,body{height:100%;margin:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;}
+.topbar{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(env(safe-area-inset-top) + 14px) 18px 10px;
+}
+.topbar h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.5px;}
+.pagesub{font-size:12px;color:var(--text-2);margin-top:2px;}
+.scorebadge{
+  display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;
+  background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px;
+}
+#main{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:0 16px calc(104px + env(safe-area-inset-bottom));}
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;
+  padding:6px 10px calc(6px + env(safe-area-inset-bottom));
+  background:var(--tab-bg);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:1px solid var(--line);
+}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:0;color:var(--text-2);font-size:11px;padding:6px 0;
+  cursor:pointer;font-family:inherit;transition:color .15s;}
+.tab .ti{font-size:19px;line-height:1;}
+.tab.active{color:var(--accent);}
+.nighttip{
+  background:linear-gradient(135deg,rgba(168,85,247,.22),rgba(91,140,255,.14));
+  border:1px solid rgba(168,85,247,.35);color:#c4b5fd;
+  font-size:12.5px;padding:10px 14px;border-radius:12px;margin-bottom:14px;
+}
+.dayhead{display:flex;align-items:center;gap:16px;
+  background:linear-gradient(135deg,var(--card),var(--card-2));
+  border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:16px;}
+.ring{width:66px;height:66px;border-radius:50%;flex:0 0 auto;position:relative;
+  background:conic-gradient(var(--accent) calc(var(--p) * 1%), var(--card-2) 0);
+  display:grid;place-items:center;transition:background .5s;}
+.ring::after{content:'';position:absolute;inset:6px;border-radius:50%;background:var(--card);}
+.ring span{position:relative;z-index:1;font-size:14px;font-weight:700;}
+.dayinfo .big{font-size:17px;font-weight:700;}
+.dayinfo .small{font-size:12.5px;color:var(--text-2);margin-top:4px;}
+.group-title{font-size:12px;color:var(--text-2);font-weight:600;
+  margin:18px 4px 8px;letter-spacing:1px;}
+.card{display:flex;align-items:center;gap:12px;background:var(--card);
+  border-radius:16px;padding:13px 14px;margin-bottom:10px;border:1px solid var(--line);
+  transition:opacity .2s;}
+.card.is-done{opacity:.62;}
+.card-main{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;}
+.card-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+  font-size:20px;flex:0 0 auto;}
+.card-body{min-width:0;flex:1;}
+.card-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-sub{font-size:11.5px;color:var(--text-2);display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap;}
+.checkbtn{width:38px;height:38px;border-radius:50%;border:2px solid var(--line);
+  background:transparent;color:transparent;font-size:19px;font-weight:700;
+  display:grid;place-items:center;cursor:pointer;transition:.2s;flex:0 0 auto;font-family:inherit;}
+.checkbtn.on{background:var(--green);border-color:var(--green);color:#fff;}
+.counter{display:flex;align-items:center;gap:6px;}
+.cbtn{width:32px;height:32px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card-2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;
+  display:grid;place-items:center;font-family:inherit;}
+.cbtn.plus{background:var(--accent);border-color:var(--accent);color:#fff;}
+.cnum{font-size:15px;font-weight:700;min-width:40px;text-align:center;}
+.cnum span{font-size:11px;color:var(--text-2);font-weight:400;}
+.numbtn{min-width:66px;padding:9px 12px;border-radius:11px;border:1px solid var(--line);
+  background:var(--card-2);color:var(--text);font-size:14px;font-weight:600;
+  cursor:pointer;font-family:inherit;}
+.numbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.avoidwrap{display:flex;gap:6px;}
+.abtn{padding:9px 11px;border-radius:11px;border:1px solid var(--line);
+  background:var(--card-2);color:var(--text-2);font-size:12.5px;font-weight:600;
+  cursor:pointer;font-family:inherit;}
+.abtn.ok.on{background:var(--green);border-color:var(--green);color:#fff;}
+.abtn.bad.on{background:var(--red);border-color:var(--red);color:#fff;}
+.review-card{background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:14px;margin-top:18px;}
+.review-title{font-size:13.5px;font-weight:600;}
+.review-sub{font-size:12px;color:var(--text-2);margin:4px 0 8px;}
+.review-item{display:flex;justify-content:space-between;gap:10px;font-size:13px;
+  padding:8px 0;border-top:1px solid var(--line);}
+.review-item em{color:var(--amber);font-style:normal;font-size:12px;text-align:right;}
+.empty{text-align:center;color:var(--text-2);padding:56px 20px;font-size:14px;line-height:2;}
+.btn-primary{background:var(--accent);color:#fff;border:0;padding:12px 22px;
+  border-radius:12px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;}
+.btn-ghost{background:var(--card-2);color:var(--text);border:1px solid var(--line);
+  padding:12px 22px;border-radius:12px;font-size:14px;font-family:inherit;cursor:pointer;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:6px 4px 14px;}
+.section-title{font-size:15px;font-weight:700;}
+.btn-add{background:var(--accent);color:#fff;border:0;padding:8px 14px;
+  border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;}
+.mcard{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;}
+.mcard.archived{opacity:.5;}
+.mcard-icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:18px;flex:0 0 auto;}
+.mcard-main{flex:1;min-width:0;}
+.mcard-name{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mcard-meta{font-size:11.5px;color:var(--text-2);margin-top:2px;}
+.mcard-acts button{background:var(--card-2);border:1px solid var(--line);color:var(--text);
+  padding:7px 12px;border-radius:9px;font-size:12.5px;font-family:inherit;cursor:pointer;}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.statbox{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:14px 8px;text-align:center;}
+.statbox b{display:block;font-size:21px;font-weight:700;}
+.statbox span{font-size:11px;color:var(--text-2);}
+.heatwrap{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:14px;margin-bottom:16px;overflow-x:auto;}
+.heat{display:flex;gap:3px;width:max-content;}
+.hcol{display:flex;flex-direction:column;gap:3px;}
+.hcell{width:12px;height:12px;border-radius:3px;background:var(--card-2);}
+.hcell.l1{background:rgba(91,140,255,.3);}
+.hcell.l2{background:rgba(91,140,255,.55);}
+.hcell.l3{background:rgba(91,140,255,.8);}
+.hcell.l4{background:#5b8cff;}
+.hcell.empty{background:transparent;}
+.habitstat{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px 14px;margin-bottom:10px;}
+.habitstat-head{display:flex;justify-content:space-between;align-items:center;
+  font-size:13.5px;font-weight:600;margin-bottom:8px;}
+.habitstat-head span{font-size:12px;color:var(--text-2);font-weight:400;}
+.bar{height:6px;border-radius:3px;background:var(--card-2);overflow:hidden;}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--accent);transition:width .4s;}
+.setrow{display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;margin-bottom:10px;}
+.setrow .lbl{font-size:14.5px;}
+.setrow .desc{font-size:11.5px;color:var(--text-2);margin-top:2px;}
+.switch{position:relative;width:50px;height:29px;flex:0 0 auto;}
+.switch input{opacity:0;width:0;height:0;}
+.switch i{position:absolute;inset:0;background:var(--card-2);border-radius:99px;
+  transition:.2s;border:1px solid var(--line);}
+.switch i::after{content:'';position:absolute;left:3px;top:3px;width:21px;height:21px;
+  border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.switch input:checked + i{background:var(--accent);border-color:var(--accent);}
+.switch input:checked + i::after{transform:translateX(21px);}
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);
+  display:flex;align-items:flex-end;justify-content:center;opacity:0;
+  transition:opacity .2s;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);}
+.overlay.show{opacity:1;}
+.sheet{
+  width:100%; max-width:520px; height: 90vh; 
+  display: flex; flex-direction: column; overflow: hidden;
+  background:var(--bg-elev); border-radius:22px 22px 0 0;
+  transform:translateY(100%); transition:transform .28s cubic-bezier(.2,.8,.3,1);
+  padding-bottom:calc(10px + env(safe-area-inset-bottom));
+}
+.overlay.show .sheet{transform:translateY(0);}
+.sheet-head{
+  flex: 0 0 auto; display:flex; align-items:center; justify-content:space-between;
+  padding:16px 16px 12px; background:var(--bg-elev); border-bottom:1px solid var(--line);
+}
+.sheet-title{font-size:16px;font-weight:600;}
+.txtbtn{background:none;border:0;color:var(--text-2);font-size:15px;
+  font-family:inherit;cursor:pointer;padding:4px 6px;}
+.txtbtn.primary{color:var(--accent);font-weight:600;}
+.sheet-body{flex: 1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px;}
+.field{margin-bottom:18px;display:block;}
+.field > span{display:block;font-size:13px;color:var(--text-2);margin-bottom:8px;font-weight:500;}
+input[type=text],input[type=number],input[type=time],textarea{
+  width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card);color:var(--text);font-size:15px;font-family:inherit;
+  outline:none;-webkit-appearance:none;appearance:none;}
+input:focus,textarea:focus{border-color:var(--accent);}
+textarea{resize:vertical;line-height:1.5;font-size:12px;font-family:ui-monospace,Menlo,monospace;}
+.seg{display:flex;gap:8px;flex-wrap:wrap;}
+.seg button{flex:1;min-width:66px;padding:12px 6px;border-radius:12px;
+  border:1px solid var(--line);background:var(--card);color:var(--text-2);
+  font-size:13px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:4px;transition:.15s;text-align:center;}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.seg button small{font-size:10.5px;opacity:.85;}
+.weekpick{display:flex;gap:6px;}
+.weekpick .wbtn{flex:1;padding:10px 0;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);color:var(--text-2);font-size:13px;font-family:inherit;cursor:pointer;}
+.weekpick .wbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+/* 横向滚动的图标和颜色选择区 */
+.iconrow{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
+.iconrow::-webkit-scrollbar {display: none;}
+.iconrow button{flex:0 0 auto;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card);font-size:20px;cursor:pointer;display:grid;place-items:center;padding:0;}
+.iconrow button.on{border-color:var(--accent);background:rgba(91,140,255,.16);}
+.colorrow{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
+.colorrow::-webkit-scrollbar {display: none;}
+.colorrow button{flex:0 0 auto;width:32px;height:32px;border-radius:50%;border:2px solid transparent;
+  cursor:pointer;padding:0;transition:.15s;}
+.colorrow button.on{border-color:var(--text);transform:scale(1.12);}
+.danger-btn{width:100%;padding:13px;border-radius:12px;border:1px solid rgba(255,93,93,.4);
+  background:rgba(255,93,93,.12);color:var(--red);font-size:14px;font-weight:600;
+  font-family:inherit;cursor:pointer;margin-top:12px;}
+.numinput-row{display:flex;align-items:center;gap:10px;}
+.numinput-row input{font-size:26px;font-weight:700;text-align:center;padding:16px;}
+.numinput-row span{font-size:16px;color:var(--text-2);}
+.hint{font-size:12px;color:var(--text-2);margin-top:6px;line-height:1.5;}
+.toast{position:fixed;left:50%;bottom:118px;transform:translateX(-50%) translateY(16px);
+  background:rgba(0,0,0,.85);color:#fff;padding:10px 18px;border-radius:12px;
+  font-size:13.5px;z-index:999;opacity:0;transition:.25s;pointer-events:none;
+  white-space:nowrap;max-width:90vw;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="topbar">
+    <div>
+      <h1 id="pageTitle">今日打卡</h1>
+      <div id="pageSub" class="pagesub"></div>
+    </div>
+    <div class="scorebadge">⭐<span id="scoreVal">0</span></div>
+  </header>
+  <main id="main"></main>
+</div>
+
+<nav class="tabbar">
+  <button class="tab active" data-tab="today"><span class="ti">✓</span><span>今日</span></button>
+  <button class="tab" data-tab="stats"><span class="ti">📊</span><span>回顾</span></button>
+  <button class="tab" data-tab="manage"><span class="ti">☰</span><span>事项</span></button>
+  <button class="tab" data-tab="settings"><span class="ti">⚙</span><span>设置</span></button>
+</nav>
+
+<script>
+/* ============================================================
+   常量与工具
+============================================================ */
+const STORAGE_KEY = 'daily-checkin-v1';
+const NOTIF_KEY   = 'daily-checkin-notif';
+
+const TYPES = [
+  { key:'check',  label:'勾选',  desc:'完成打勾' },
+  { key:'count',  label:'计数',  desc:'累加次数' },
+  { key:'number', label:'数值',  desc:'记录数字' },
+  { key:'avoid',  label:'戒除',  desc:'保持不做' }
+];
+const TYPE_LABEL = { check:'勾选打卡', count:'计数打卡', number:'数值记录', avoid:'戒除打卡' };
+
+const CATEGORIES = ['学习','健康','运动','生活','工作','理财','阅读','其他'];
+const EMOJIS = ['📌','📚','💧','🏃','💪','🧘','🌙','🍎','💊','📝','💰','🎯','🎸','🧹','🚭','☀️','🛏️','🚶','🥗','✍️','🎨','🧠','❤️','🔋','🍵','🚴','🧴','🎧'];
+const COLORS = ['#5b8cff','#35c77b','#ffb020','#ff5d5d','#a855f7','#06b6d4','#f472b6','#84cc16'];
+const WEEK_CN = ['日','一','二','三','四','五','六'];
+
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const pad2 = n => String(n).padStart(2,'0');
+const uid  = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-3);
+
+function dateKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function parseKey(k){ const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d); }
+function addDays(d, n){ const x = new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function fmtMD(k){ const d = parseKey(k); return `${d.getMonth()+1}月${d.getDate()}日`; }
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function toast(msg){
+  let t = $('#toast');
+  if(!t){ t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  requestAnimationFrame(()=>t.classList.add('show'));
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function haptic(){ if(navigator.vibrate) try{ navigator.vibrate(8); }catch(e){} }
+
+/* ============================================================
+   数据层
+============================================================ */
+function defaultState(){
+  return {
+    habits: [],
+    records: {},
+    settings: { dayStartHour: 4, theme: 'dark', notifEnabled: false },
+    version: 1
+  };
+}
+
+function newHabit(){
+  return {
+    id: uid(),
+    name: '',
+    category: '学习',
+    type: 'check',
+    icon: '📌',
+    color: '#5b8cff',
+    weekdays: [0,1,2,3,4,5,6],
+    reminder: '',
+    reward: '',
+    penalty: '',
+    targetCount: 8,
+    step: 1,
+    unit: '次',
+    numberUnit: '',
+    numberTarget: null,
+    numberDir: 'any',
+    archived: false,
+    createdAt: Date.now()
+  };
+}
+
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw){
+    const s = defaultState();
+    // 预置几个示例
+    s.habits = [
+      Object.assign(newHabit(), { name:'阅读 30 分钟', category:'学习', type:'check', icon:'📚', color:'#5b8cff', reminder:'20:00', reward:'看一集喜欢的剧', penalty:'睡前做 20 个深蹲' }),
+      Object.assign(newHabit(), { name:'喝水', category:'健康', type:'count', icon:'💧', color:'#06b6d4', targetCount:8, unit:'杯', step:1, reminder:'10:00', reward:'一杯奶茶（周末）', penalty:'晚饭少吃一口' }),
+      Object.assign(newHabit(), { name:'体重记录', category:'健康', type:'number', icon:'⚖️', color:'#35c77b', numberUnit:'kg', numberTarget:70, numberDir:'down', reminder:'07:30' }),
+      Object.assign(newHabit(), { name:'不喝奶茶', category:'健康', type:'avoid', icon:'🚫', color:'#ff5d5d', reward:'省下的钱存起来', penalty:'做 30 个开合跳' })
+    ];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+    return s;
+  }
+  try{
+    const s = JSON.parse(raw);
+    s.settings = Object.assign(defaultState().settings, s.settings || {});
+    s.habits = Array.isArray(s.habits) ? s.habits : [];
+    s.records = s.records || {};
+    return s;
+  }catch(e){
+    return defaultState();
+  }
+}
+
+let state = loadState();
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function todayKey(now = new Date()){
+  const h = now.getHours();
+  let d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if(h < state.settings.dayStartHour) d = addDays(d, -1);
+  return dateKey(d);
+}
+
+function getRec(dk, id){ return (state.records[dk] && state.records[dk][id]) || {}; }
+function setRec(dk, id, patch){
+  if(!state.records[dk]) state.records[dk] = {};
+  state.records[dk][id] = Object.assign({}, state.records[dk][id] || {}, patch, { ts: Date.now() });
+}
+
+function activeOnDate(h, dk){
+  if(h.archived) return false;
+  const d = parseKey(dk);
+  const wd = d.getDay();
+  if(Array.isArray(h.weekdays) && h.weekdays.length && !h.weekdays.includes(wd)) return false;
+  if(h.createdAt){
+    const c = new Date(h.createdAt);
+    const ck = dateKey(new Date(c.getFullYear(), c.getMonth(), c.getDate()));
+    if(dk < ck) return false;
+  }
+  return true;
+}
+
+function habitDone(h, rec){
+  if(!rec) return false;
+  switch(h.type){
+    case 'check':  return !!rec.done;
+    case 'count':  return (rec.count || 0) >= (h.targetCount || 1);
+    case 'number': 
+      if(rec.value === undefined || rec.value === null || rec.value === '') return false;
+      if(h.numberTarget === null || h.numberTarget === undefined) return true;
+      if(h.numberDir === 'down') return Number(rec.value) <= h.numberTarget;
+      if(h.numberDir === 'up') return Number(rec.value) >= h.numberTarget;
+      return true;
+    case 'avoid':  return !!rec.ok && !rec.broken;
+    default: return false;
+  }
+}
+
+function dayStatus(dk){
+  const habits = state.habits.filter(h => activeOnDate(h, dk));
+  const done = habits.filter(h => habitDone(h, getRec(dk, h.id))).length;
+  return { total: habits.length, done, habits };
+}
+
+function calcPoints(){
+  let total = 0;
+  for(const dk in state.records){
+    const recs = state.records[dk];
+    for(const h of state.habits){
+      const rec = recs[h.id];
+      if(!rec) continue;
+      if(!activeOnDate(h, dk) && !h.archived) continue;
+      const base = 20;
+      if(habitDone(h, rec)){
+        if(h.type === 'count'){
+          const ratio = Math.min(1, (rec.count || 0) / (h.targetCount || 1));
+          total += Math.round(base * ratio);
+        } else {
+          total += base;
+        }
+      } else if(h.type === 'avoid' && rec.broken){
+        total -= Math.round(base * 0.5);
+      }
+    }
+  }
+  return total;
+}
+
+function currentStreak(){
+  const todayK = todayKey();
+  let streak = 0;
+  let d = parseKey(todayK);
+  const t = dayStatus(todayK);
+  if(t.total > 0 && t.done === 0) d = addDays(d, -1);
+  let guard = 0;
+  while(guard++ < 400){
+    const s = dayStatus(dateKey(d));
+    if(s.total > 0){
+      if(s.done > 0) streak++;
+      else break;
+    }
+    d = addDays(d, -1);
+  }
+  return streak;
+}
+
+/* ============================================================
+   渲染入口
+============================================================ */
+const main = $('#main');
+let currentTab = 'today';
+let statsRange = 7;
+
+function render(){
+  const sc = main.scrollTop;
+  updateHeader();
+  $('#scoreVal').textContent = calcPoints();
+  switch(currentTab){
+    case 'today':   renderToday(); break;
+    case 'stats':   renderStats(); break;
+    case 'manage':  renderManage(); break;
+    case 'settings':renderSettings(); break;
+  }
+  main.scrollTop = sc;
+}
+
+function updateHeader(){
+  const dk = todayKey();
+  const d = parseKey(dk);
+  const titles = { today:'今日打卡', stats:'回顾统计', manage:'打卡事项', settings:'设置' };
+  $('#pageTitle').textContent = titles[currentTab];
+  $('#pageSub').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${WEEK_CN[d.getDay()]}`;
+}
+
+/* ---------------- 今日 ---------------- */
+function renderToday(){
+  const dk = todayKey();
+  const habits = state.habits.filter(h => activeOnDate(h, dk));
+  const total = habits.length;
+  const doneCount = habits.filter(h => habitDone(h, getRec(dk, h.id))).length;
+  const pct = total ? Math.round(doneCount / total * 100) : 0;
+  const pts = calcPoints();
+  const streak = currentStreak();
+  const isNight = new Date().getHours() < state.settings.dayStartHour;
+
+  let html = '';
+  if(isNight){
+    html += `<div class="nighttip">🌙 午夜模式 · 现在打卡仍计入 ${fmtMD(dk)}</div>`;
+  }
+
+  html += `
+    <div class="dayhead">
+      <div class="ring" style="--p:${pct}"><span>${pct}%</span></div>
+      <div class="dayinfo">
+        <div class="big">${doneCount} / ${total} 已完成</div>
+        <div class="small">⭐ ${pts} 分 · 🔥 连续 ${streak} 天</div>
+      </div>
+    </div>`;
+
+  if(total === 0){
+    html += `<div class="empty">今天还没有打卡事项<br>
+      <button class="btn-primary" data-act="new-habit" style="margin-top:8px">+ 新建打卡事项</button></div>`;
+  } else {
+    const groups = new Map();
+    for(const h of habits){
+      if(!groups.has(h.category)) groups.set(h.category, []);
+      groups.get(h.category).push(h);
+    }
+    for(const [cat, list] of groups){
+      html += `<div class="group-title">${esc(cat)}</div>`;
+      for(const h of list) html += habitCardHTML(h, dk);
+    }
+  }
+
+  const yk = dateKey(addDays(parseKey(dk), -1));
+  const missedY = state.habits.filter(h => activeOnDate(h, yk) && !habitDone(h, getRec(yk, h.id)));
+  if(missedY.length){
+    html += `<div class="review-card">
+      <div class="review-title">📌 昨日复盘 · ${fmtMD(yk)}</div>
+      <div class="review-sub">${missedY.length} 项未完成（未完成不会顺延到今天）</div>
+      ${missedY.map(h => `<div class="review-item">
+          <span>${h.icon} ${esc(h.name)}</span>
+          <em>${esc(h.penalty || '未设置惩罚')}</em>
+        </div>`).join('')}
+    </div>`;
+  }
+  main.innerHTML = html;
+}
+
+function habitCardHTML(h, dk){
+  const rec = getRec(dk, h.id);
+  const done = habitDone(h, rec);
+  let ctrl = '';
+  let extra = '';
+
+  if(h.type === 'check'){
+    ctrl = `<button class="checkbtn ${done?'on':''}" data-act="toggle" data-id="${h.id}">${done?'✓':''}</button>`;
+  } else if(h.type === 'count'){
+    const c = rec.count || 0;
+    extra = `<span>${c}/${h.targetCount}${esc(h.unit||'')}</span>`;
+    ctrl = `<div class="counter">
+      <button class="cbtn" data-act="count-dec" data-id="${h.id}">−</button>
+      <div class="cnum">${c}<span>/${h.targetCount}</span></div>
+      <button class="cbtn plus" data-act="count-inc" data-id="${h.id}">+</button>
+    </div>`;
+  } else if(h.type === 'number'){
+    const has = rec.value !== undefined && rec.value !== null && rec.value !== '';
+    extra = h.numberTarget != null
+      ? `<span>达标线 ${h.numberDir==='down'?'≤':'≥'} ${h.numberTarget}${esc(h.numberUnit||'')}</span>` : '';
+    ctrl = `<button class="numbtn ${done?'on':''}" data-act="num-set" data-id="${h.id}">
+      ${has ? (rec.value + (h.numberUnit||'')) : '记录'}</button>`;
+  } else if(h.type === 'avoid'){
+    extra = `<span>${rec.broken ? '今天破戒了' : (rec.ok ? '继续保持' : '还没确认')}</span>`;
+    ctrl = `<div class="avoidwrap">
+      <button class="abtn ok ${rec.ok && !rec.broken ? 'on':''}" data-act="avoid-ok" data-id="${h.id}">守住</button>
+      <button class="abtn bad ${rec.broken ? 'on':''}" data-act="avoid-bad" data-id="${h.id}">破戒</button>
+    </div>`;
+  }
+
+  return `<div class="card ${done?'is-done':''}">
+    <div class="card-main" data-act="open" data-id="${h.id}">
+      <div class="card-icon" style="background:${h.color}22">${h.icon}</div>
+      <div class="card-body">
+        <div class="card-name">${esc(h.name)}</div>
+        <div class="card-sub">
+          ${h.reminder ? `<span>⏰${h.reminder}</span>` : ''}
+          ${extra}
+        </div>
+      </div>
+    </div>
+    ${ctrl}
+  </div>`;
+}
+
+/* ---------------- 回顾 ---------------- */
+function renderStats(){
+  const todayK = todayKey();
+  const rangeDays = statsRange;
+  const dayKeys = [];
+  for(let i = rangeDays - 1; i >= 0; i--) dayKeys.push(dateKey(addDays(parseKey(todayK), -i)));
+
+  let totalShould = 0, totalDid = 0, perfectDays = 0;
+  for(const k of dayKeys){
+    const s = dayStatus(k);
+    totalShould += s.total;
+    totalDid += s.done;
+    if(s.total > 0 && s.done === s.total) perfectDays++;
+  }
+  const rate = totalShould ? Math.round(totalDid / totalShould * 100) : 0;
+  const streak = currentStreak();
+
+  let html = `<div class="seg" style="margin-bottom:16px">
+    ${[7,30,90].map(n => `<button type="button" data-act="range" data-v="${n}" class="${statsRange===n?'on':''}">最近 ${n} 天</button>`).join('')}
+  </div>`;
+
+  html += `<div class="statgrid">
+    <div class="statbox"><b>${rate}%</b><span>完成率</span></div>
+    <div class="statbox"><b>${streak}</b><span>连续天数</span></div>
+    <div class="statbox"><b>${perfectDays}</b><span>全勤天数</span></div>
+  </div>`;
+
+  html += `<div class="heatwrap"><div class="heat" id="heatmap">${buildHeatmap(todayK)}</div></div>`;
+
+  const rows = state.habits.filter(h => !h.archived).map(h => {
+    let should = 0, did = 0;
+    for(const k of dayKeys){
+      if(!activeOnDate(h, k)) continue;
+      should++;
+      if(habitDone(h, getRec(k, h.id))) did++;
+    }
+    return { h, should, did, rate: should ? Math.round(did/should*100) : 0 };
+  }).sort((a,b) => b.rate - a.rate);
+
+  if(rows.length){
+    html += `<div class="group-title" style="margin-top:4px">各事项完成情况</div>`;
+    for(const r of rows){
+      html += `<div class="habitstat">
+        <div class="habitstat-head">
+          <span style="font-weight:600;color:var(--text)">${r.h.icon} ${esc(r.h.name)}</span>
+          <span>${r.did}/${r.should} · ${r.rate}%</span>
+        </div>
+        <div class="bar"><i style="width:${r.rate}%;background:${r.h.color}"></i></div>
+      </div>`;
+    }
+  } else {
+    html += `<div class="empty">还没有打卡事项</div>`;
+  }
+
+  html += `<div class="group-title">最近 7 天</div>`;
+  for(let i = 6; i >= 0; i--){
+    const k = dateKey(addDays(parseKey(todayK), -i));
+    const s = dayStatus(k);
+    const p = s.total ? Math.round(s.done / s.total * 100) : 0;
+    html += `<div class="habitstat" style="padding:10px 14px">
+      <div class="habitstat-head" style="margin-bottom:6px">
+        <span style="font-weight:500;color:var(--text)">${fmtMD(k)} 星期${WEEK_CN[parseKey(k).getDay()]}${k===todayK?' · 今天':''}</span>
+        <span>${s.done}/${s.total}</span>
+      </div>
+      <div class="bar"><i style="width:${p}%;background:${p===100?'var(--green)':'var(--accent)'}"></i></div>
+    </div>`;
+  }
+  main.innerHTML = html;
+}
+
+function buildHeatmap(todayK){
+  const endDate = parseKey(todayK);
+  let start = addDays(endDate, -90);
+  while(start.getDay() !== 0) start = addDays(start, -1);
+  let cols = [];
+  let cur = new Date(start.getTime());
+  while(cur <= endDate){
+    const col = [];
+    for(let i = 0; i < 7; i++){
+      const d = addDays(cur, i);
+      col.push(d > endDate ? null : dateKey(d));
+    }
+    cols.push(col);
+    cur = addDays(cur, 7);
+  }
+  return cols.map(col => `<div class="hcol">${col.map(k => {
+    if(!k) return `<div class="hcell empty"></div>`;
+    const s = dayStatus(k);
+    let lv = 0;
+    if(s.total > 0 && s.done > 0){
+      const r = s.done / s.total;
+      lv = r >= 1 ? 4 : r >= 0.66 ? 3 : r >= 0.34 ? 2 : 1;
+    }
+    return `<div class="hcell ${lv ? 'l'+lv : ''}" data-act="dayinfo" data-v="${k}" title="${k}"></div>`;
+  }).join('')}</div>`).join('');
+}
+
+/* ---------------- 事项管理 ---------------- */
+function renderManage(){
+  const list = state.habits;
+  const activeCount = list.filter(h => !h.archived).length;
+
+  let html = `<div class="section-head">
+    <div class="section-title">打卡事项 (${activeCount})</div>
+    <button class="btn-add" data-act="new-habit">+ 新建</button>
+  </div>`;
+
+  if(!list.length){
+    html += `<div class="empty">还没有打卡事项<br>点击右上角「新建」创建第一个吧</div>`;
+  } else {
+    for(const h of list){
+      html += `<div class="mcard ${h.archived?'archived':''}">
+        <div class="mcard-icon" style="background:${h.color}22">${h.icon}</div>
+        <div class="mcard-main">
+          <div class="mcard-name">${esc(h.name)}</div>
+          <div class="mcard-meta">
+            ${esc(h.category)} · ${TYPE_LABEL[h.type]||''}
+            ${h.archived?' · 已结束':''}
+          </div>
+        </div>
+        <div class="mcard-acts">
+          <button data-act="edit-habit" data-id="${h.id}">编辑</button>
+        </div>
+      </div>`;
+    }
+  }
+  main.innerHTML = html;
+}
+
+/* ---------------- 设置 ---------------- */
+function renderSettings(){
+  const s = state.settings;
+  let html = '';
+
+  html += `<div class="group-title" style="margin-top:0">打卡规则</div>`;
+
+  html += `<div class="setrow">
+    <div>
+      <div class="lbl">新的一天开始于</div>
+      <div class="desc">凌晨 0 点到这个时间之间的打卡，算作前一天</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <button class="btn-ghost" style="padding:8px 12px" data-act="hour-minus">−</button>
+      <b id="hourVal" style="min-width:46px;text-align:center">${pad2(s.dayStartHour)}:00</b>
+      <button class="btn-ghost" style="padding:8px 12px" data-act="hour-plus">+</button>
+    </div>
+  </div>`;
+
+  html += `<div class="group-title">提醒</div>`;
+  html += `<div class="setrow">
+    <div>
+      <div class="lbl">到期提醒通知</div>
+      <div class="desc">${Notification.permission === 'granted' ? '已授权' : '需授权（iOS 需添加到主屏幕）'}</div>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="notifToggle" ${s.notifEnabled ? 'checked':''}>
+      <i></i>
+    </label>
+  </div>`;
+
+  html += `<div class="group-title">外观</div>`;
+  html += `<div class="setrow">
+    <div class="lbl">深色模式</div>
+    <label class="switch">
+      <input type="checkbox" id="themeToggle" ${s.theme === 'dark' ? 'checked':''}>
+      <i></i>
+    </label>
+  </div>`;
+
+  html += `<div class="group-title">数据</div>`;
+  html += `<div class="setrow" style="padding:0;border:0;background:none;gap:10px">
+    <button class="btn-ghost" style="flex:1" data-act="export">导出数据</button>
+    <button class="btn-ghost" style="flex:1" data-act="import">导入数据</button>
+  </div>`;
+  html += `<button class="danger-btn" data-act="reset">清空所有数据</button>`;
+
+  html += `<div style="text-align:center;color:var(--text-2);font-size:11.5px;margin:26px 0 10px;line-height:1.8">
+    每日打卡 · 数据保存在本机浏览器<br>建议定期导出备份
+  </div>`;
+
+  main.innerHTML = html;
+
+  const nt = $('#notifToggle');
+  if(nt){
+    nt.addEventListener('change', async () => {
+      if(nt.checked){
+        const ok = await requestNotifPermission();
+        if(!ok){ nt.checked = false; state.settings.notifEnabled = false; saveState(); toast('未获得通知权限'); return; }
+        state.settings.notifEnabled = true;
+      } else {
+        state.settings.notifEnabled = false;
+      }
+      saveState();
+      toast(nt.checked ? '提醒已开启' : '提醒已关闭');
+    });
+  }
+
+  const tt = $('#themeToggle');
+  if(tt){
+    tt.addEventListener('change', () => {
+      state.settings.theme = tt.checked ? 'dark' : 'light';
+      saveState(); applyTheme(); toast(tt.checked ? '深色模式' : '浅色模式');
+    });
+  }
+}
+
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', state.settings.theme === 'light' ? 'light' : 'dark');
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', state.settings.theme === 'light' ? '#f2f4f8' : '#0d0f14');
+}
+
+/* ============================================================
+   事件处理
+============================================================ */
+main.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act;
+  const id = el.dataset.id;
+  const dk = todayKey();
+  const h = id ? state.habits.find(x => x.id === id) : null;
+
+  switch(act){
+    case 'toggle': {
+      const rec = getRec(dk, id);
+      setRec(dk, id, { done: !rec.done });
+      haptic(); saveState(); render();
+      break;
+    }
+    case 'count-inc': {
+      if(!h) break;
+      const rec = getRec(dk, id);
+      const next = (rec.count || 0) + (h.step || 1);
+      setRec(dk, id, { count: next });
+      haptic(); saveState(); render();
+      break;
+    }
+    case 'count-dec': {
+      if(!h) break;
+      const rec = getRec(dk, id);
+      const next = Math.max(0, (rec.count || 0) - (h.step || 1));
+      setRec(dk, id, { count: next });
+      saveState(); render();
+      break;
+    }
+    case 'avoid-ok': {
+      setRec(dk, id, { ok: true, broken: false });
+      haptic(); saveState(); render();
+      break;
+    }
+    case 'avoid-bad': {
+      setRec(dk, id, { broken: true, ok: false });
+      haptic(); saveState(); render();
+      break;
+    }
+    case 'num-set': {
+      if(h) openNumberDialog(h, dk);
+      break;
+    }
+    case 'open': case 'edit-habit': {
+      if(h) openHabitEditor(h);
+      break;
+    }
+    case 'new-habit': {
+      openHabitEditor(null);
+      break;
+    }
+    case 'range': {
+      statsRange = Number(el.dataset.v);
+      render();
+      break;
+    }
+    case 'dayinfo': {
+      const k = el.dataset.v;
+      const s = dayStatus(k);
+      toast(`${fmtMD(k)}：完成 ${s.done}/${s.total}`);
+      break;
+    }
+    case 'hour-minus': case 'hour-plus': {
+      const delta = act === 'hour-plus' ? 1 : -1;
+      let v = state.settings.dayStartHour + delta;
+      if(v < 0) v = 0;
+      if(v > 8) v = 8;
+      state.settings.dayStartHour = v;
+      saveState(); render();
+      toast(`新的一天从 ${pad2(v)}:00 开始`);
+      break;
+    }
+    case 'export': exportData(); break;
+    case 'import': importData(); break;
+    case 'reset': {
+      if(confirm('确定清空所有打卡数据吗？此操作不可撤销。')){
+        localStorage.removeItem(STORAGE_KEY);
+        state = defaultState();
+        saveState();
+        render();
+        toast('已清空');
+      }
+      break;
+    }
+  }
+});
+
+/* Tab 切换 */
+$$('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentTab = btn.dataset.tab;
+    $$('.tab').forEach(b => b.classList.toggle('active', b === btn));
+    render();
+    main.scrollTop = 0;
+  });
+});
+
+/* ============================================================
+   弹层
+============================================================ */
+function showOverlay(html, onMount){
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `<div class="sheet">${html}</div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e => { if(e.target === ov) closeOverlay(ov); });
+  $$('[data-close]', ov).forEach(b => b.addEventListener('click', () => closeOverlay(ov)));
+  requestAnimationFrame(() => ov.classList.add('show'));
+  if(onMount) onMount(ov);
+  return ov;
+}
+function closeOverlay(ov){
+  ov.classList.remove('show');
+  setTimeout(() => ov.remove(), 280);
+}
+
+function bindSeg(ov, sel, cb){
+  const wrap = $(sel, ov);
+  if(!wrap) return;
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('button[data-v]');
+    if(!b) return;
+    $$('button', wrap).forEach(x => x.classList.toggle('on', x === b));
+    cb(b.dataset.v);
+  });
+}
+
+/* ---------------- 新建 / 编辑事项 ---------------- */
+function openHabitEditor(existing){
+  const isNew = !existing;
+  const h = existing ? JSON.parse(JSON.stringify(existing)) : newHabit();
+
+  const ov = showOverlay(`
+    <div class="sheet-head">
+      <button class="txtbtn" data-close>取消</button>
+      <div class="sheet-title">${isNew ? '新建打卡' : '编辑打卡'}</div>
+      <div style="width:36px"></div>
+    </div>
+    
+    <div class="sheet-body">
+      <label class="field"><span>名称</span>
+        <input type="text" id="f-name" value="${esc(h.name)}" placeholder="例如：阅读、喝水、记录体重" maxlength="24">
+      </label>
+
+      <div class="field"><span>打卡类型</span>
+        <div class="seg" id="f-type">
+          ${TYPES.map(t => `<button type="button" data-v="${t.key}" class="${h.type===t.key?'on':''}">
+            <b>${t.label}</b><small>${t.desc}</small></button>`).join('')}
+        </div>
+      </div>
+
+      <!-- 动态显示的区域：计数 -->
+      <div id="fields-count" class="field" hidden>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1">
+            <span>目标总数</span>
+            <input type="number" id="f-target" min="1" step="1" value="${h.targetCount||8}" placeholder="如 8">
+          </div>
+          <div style="flex:1">
+            <span>单次增加</span>
+            <input type="number" id="f-step" min="1" step="1" value="${h.step||1}" placeholder="如 1">
+          </div>
+          <div style="flex:1">
+            <span>单位</span>
+            <input type="text" id="f-unit" value="${esc(h.unit||'')}" placeholder="杯/页">
+          </div>
+        </div>
+        <div class="hint">例如喝水：目标填 8，单次填 1，单位填“杯”。</div>
+      </div>
+
+      <!-- 动态显示的区域：数值 -->
+      <div id="fields-number" class="field" hidden>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <div style="flex:1">
+            <span>记录单位</span>
+            <input type="text" id="f-numunit" value="${esc(h.numberUnit||'')}" placeholder="如 kg, 步">
+          </div>
+          <div style="flex:1">
+            <span>目标值</span>
+            <input type="number" id="f-numtarget" step="any" value="${h.numberTarget ?? ''}" placeholder="不填则仅记录">
+          </div>
+        </div>
+        <span>达标线判断</span>
+        <div class="seg" id="f-numdir">
+          ${[['any','仅记录'],['down','越低越好 (≤)'],['up','越高越好 (≥)']].map(([k,l]) =>
+            `<button type="button" data-v="${k}" class="${h.numberDir===k?'on':''}">${l}</button>`).join('')}
+        </div>
+      </div>
+
+      <label class="field"><span>分类</span>
+        <input type="text" id="f-category" list="catlist" value="${esc(h.category)}" placeholder="输入或选择分类">
+        <datalist id="catlist">${CATEGORIES.map(c => `<option value="${c}">`).join('')}</datalist>
+      </label>
+
+      <div class="field"><span>重复（每周）</span>
+        <div class="weekpick" id="f-week">
+          ${WEEK_CN.map((l,i) =>
+            `<button type="button" class="wbtn ${h.weekdays.includes(i)?'on':''}" data-wd="${i}">${l}</button>`).join('')}
+        </div>
+      </div>
+
+      <label class="field"><span>提醒时间</span>
+        <input type="time" id="f-reminder" value="${esc(h.reminder||'')}">
+      </label>
+
+      <div class="field"><span>图标</span>
+        <div class="iconrow" id="f-icon">
+          ${EMOJIS.map(e => `<button type="button" data-v="${e}" class="${h.icon===e?'on':''}">${e}</button>`).join('')}
+        </div>
+      </div>
+
+      <div class="field"><span>颜色</span>
+        <div class="colorrow" id="f-color">
+          ${COLORS.map(c => `<button type="button" data-v="${c}" class="${h.color===c?'on':''}"
+            style="background:${c}"></button>`).join('')}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px" class="field">
+        <label style="flex:1"><span>完成奖励</span>
+          <input type="text" id="f-reward" value="${esc(h.reward||'')}" placeholder="可选" maxlength="20">
+        </label>
+        <label style="flex:1"><span>未完成惩罚</span>
+          <input type="text" id="f-penalty" value="${esc(h.penalty||'')}" placeholder="可选" maxlength="20">
+        </label>
+      </div>
+
+      ${isNew ? '' : `<button class="danger-btn" id="btn-archive">${h.archived?'恢复此事项':'结束此阶段（保留记录）'}</button>`}
+      ${isNew ? '' : `<button class="danger-btn" id="btn-del">彻底删除（连同记录）</button>`}
+      
+      <div style="height: 20px;"></div>
+    </div>
+
+    <div style="flex:0 0 auto; padding: 12px 16px; border-top: 1px solid var(--line); background: var(--bg-elev); display: flex; gap: 10px;">
+      <button class="btn-ghost" data-close style="flex:1">取消</button>
+      <button class="btn-primary" id="btn-save-bottom" style="flex:2">保存并完成</button>
+    </div>
+  `);
+
+  ov.dataset.type = h.type;
+  ov.dataset.numdir = h.numberDir || 'any';
+  ov.dataset.icon = h.icon;
+  ov.dataset.color = h.color;
+
+  // 核心交互：根据选择的类型，动态显示/隐藏对应设置
+  const updateTypeFields = (type) => {
+    $('#fields-count', ov).hidden = (type !== 'count');
+    $('#fields-number', ov).hidden = (type !== 'number');
+  };
+  updateTypeFields(h.type);
+
+  bindSeg(ov, '#f-type', v => { ov.dataset.type = v; updateTypeFields(v); });
+  bindSeg(ov, '#f-numdir', v => { ov.dataset.numdir = v; });
+  bindSeg(ov, '#f-icon', v => { ov.dataset.icon = v; });
+  bindSeg(ov, '#f-color', v => { ov.dataset.color = v; });
+
+  $('#f-week', ov).addEventListener('click', e => {
+    const b = e.target.closest('.wbtn');
+    if(b) b.classList.toggle('on');
+  });
+
+  const doSaveHabit = () => {
+    const name = $('#f-name', ov).value.trim();
+    if(!name){ toast('请填写名称'); return; }
+
+    h.name = name;
+    h.category = $('#f-category', ov).value.trim() || '其他';
+    h.type = ov.dataset.type;
+    
+    // 只在对应类型下读取这些值，避免不必要的 DOM 读取错误
+    if(h.type === 'count'){
+      h.targetCount = Math.max(1, parseInt($('#f-target', ov).value, 10) || 1);
+      h.step = Math.max(1, parseInt($('#f-step', ov).value, 10) || 1);
+      h.unit = $('#f-unit', ov).value.trim();
+    } else if(h.type === 'number'){
+      h.numberUnit = $('#f-numunit', ov).value.trim();
+      const nt = $('#f-numtarget', ov).value;
+      h.numberTarget = nt === '' ? null : Number(nt);
+      h.numberDir = ov.dataset.numdir || 'any';
+    }
+
+    h.reminder = $('#f-reminder', ov).value || '';
+    h.reward = $('#f-reward', ov).value.trim();
+    h.penalty = $('#f-penalty', ov).value.trim();
+    h.icon = ov.dataset.icon || '📌';
+    h.color = ov.dataset.color || '#5b8cff';
+
+    const wds = $$('#f-week .wbtn.on', ov).map(b => Number(b.dataset.wd));
+    h.weekdays = wds.length ? wds : [0,1,2,3,4,5,6];
+
+    if(isNew){
+      state.habits.push(h);
+    } else {
+      const i = state.habits.findIndex(x => x.id === h.id);
+      if(i >= 0) state.habits[i] = h;
+    }
+    saveState();
+    closeOverlay(ov);
+    render();
+    toast(isNew ? '已创建打卡事项' : '已保存修改');
+  };
+
+  $('#btn-save-bottom', ov).addEventListener('click', doSaveHabit);
+
+  const delBtn = $('#btn-del', ov);
+  if(delBtn){
+    delBtn.addEventListener('click', () => {
+      if(!confirm(`确定彻底删除「${h.name}」吗？历史记录也会一并删除。`)) return;
+      state.habits = state.habits.filter(x => x.id !== h.id);
+      for(const dk in state.records) delete state.records[dk][h.id];
+      saveState();
+      closeOverlay(ov);
+      render();
+      toast('已删除');
+    });
+  }
+
+  const arcBtn = $('#btn-archive', ov);
+  if(arcBtn){
+    arcBtn.addEventListener('click', () => {
+      h.archived = !h.archived;
+      const i = state.habits.findIndex(x => x.id === h.id);
+      if(i >= 0) state.habits[i] = h;
+      saveState();
+      closeOverlay(ov);
+      render();
+      toast(h.archived ? '已结束当前阶段' : '已恢复打卡');
+    });
+  }
+}
+
+/* ---------------- 数值记录弹窗 ---------------- */
+function openNumberDialog(h, dk){
+  const rec = getRec(dk, h.id);
+  const ov = showOverlay(`
+    <div class="sheet-head">
+      <button class="txtbtn" data-close>取消</button>
+      <div class="sheet-title">${esc(h.name)}</div>
+      <button class="txtbtn primary" id="btn-ok">确定</button>
+    </div>
+    <div class="sheet-body" style="flex:initial">
+      <div class="numinput-row">
+        <input type="number" id="numv" step="any" inputmode="decimal"
+          value="${rec.value ?? ''}" placeholder="0">
+        <span>${esc(h.numberUnit || '')}</span>
+      </div>
+      ${h.numberTarget != null ? `<div class="hint">达标线：${h.numberDir==='down'?'≤':'≥'} ${h.numberTarget}${esc(h.numberUnit||'')}</div>` : ''}
+      <div class="hint">记录 ${fmtMD(dk)} 的数值</div>
+    </div>
+  `, (o) => {
+    setTimeout(() => { const inp = $('#numv', o); if(inp) inp.focus(); }, 320);
+  });
+
+  const doSave = () => {
+    const v = $('#numv', ov).value;
+    if(v === ''){ setRec(dk, h.id, { value: null }); }
+    else { setRec(dk, h.id, { value: Number(v) }); }
+    saveState();
+    closeOverlay(ov);
+    render();
+    toast('已记录');
+  };
+
+  $('#btn-ok', ov).addEventListener('click', doSave);
+  $('#numv', ov).addEventListener('keydown', e => { if(e.key === 'Enter') doSave(); });
+}
+
+/* ---------------- 导入导出 ---------------- */
+function exportData(){
+  const data = JSON.stringify(state, null, 2);
+  const ov = showOverlay(`
+    <div class="sheet-head">
+      <button class="txtbtn" data-close>关闭</button>
+      <div class="sheet-title">导出数据</div>
+      <button class="txtbtn primary" id="btn-copy">复制</button>
+    </div>
+    <div class="sheet-body">
+      <div class="hint" style="margin-bottom:10px">复制下面全部内容妥善保存，可用于恢复数据。</div>
+      <textarea id="exp-ta" rows="12" readonly>${esc(data)}</textarea>
+    </div>
+  `);
+  $('#btn-copy', ov).addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(data);
+      toast('已复制到剪贴板');
+    }catch(e){
+      const ta = $('#exp-ta', ov); ta.select(); document.execCommand('copy');
+      toast('已复制');
+    }
+  });
+}
+
+function importData(){
+  const ov = showOverlay(`
+    <div class="sheet-head">
+      <button class="txtbtn" data-close>取消</button>
+      <div class="sheet-title">导入数据</div>
+      <button class="txtbtn primary" id="btn-imp">导入</button>
+    </div>
+    <div class="sheet-body">
+      <div class="hint" style="margin-bottom:10px">把之前导出的 JSON 粘贴到下面，导入会覆盖当前数据。</div>
+      <textarea id="imp-ta" rows="10" placeholder='{"habits":[],"records":{},...}'></textarea>
+    </div>
+  `);
+  $('#btn-imp', ov).addEventListener('click', () => {
+    try{
+      const obj = JSON.parse($('#imp-ta', ov).value);
+      if(!obj || !Array.isArray(obj.habits)) throw new Error('格式错误');
+      state = Object.assign(defaultState(), obj);
+      state.settings = Object.assign(defaultState().settings, obj.settings || {});
+      saveState();
+      closeOverlay(ov);
+      applyTheme();
+      render();
+      toast('导入成功');
+    }catch(e){
+      toast('数据格式不正确');
+    }
+  });
+}
+
+/* ============================================================
+   通知提醒
+============================================================ */
+let notifStore = (() => {
+  try{ return JSON.parse(localStorage.getItem(NOTIF_KEY)) || { date:'', ids:[] }; }
+  catch(e){ return { date:'', ids:[] }; }
+})();
+
+async function requestNotifPermission(){
+  if(!('Notification' in window)){ toast('当前浏览器不支持通知'); return false; }
+  if(Notification.permission === 'granted') return true;
+  if(Notification.permission === 'denied') return false;
+  try{
+    const p = await Notification.requestPermission();
+    return p === 'granted';
+  }catch(e){ return false; }
+}
+
+function checkReminders(){
+  if(!state.settings.notifEnabled) return;
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const dk = todayKey(now);
+  if(notifStore.date !== dk) notifStore = { date: dk, ids: [] };
+
+  const curMin = now.getHours() * 60 + now.getMinutes();
+  let changed = false;
+
+  for(const h of state.habits){
+    if(!h.reminder || !activeOnDate(h, dk)) continue;
+    if(notifStore.ids.includes(h.id)) continue;
+    const [hh, mm] = h.reminder.split(':').map(Number);
+    if(curMin < hh * 60 + (mm || 0)) continue;
+    if(habitDone(h, getRec(dk, h.id))) continue;
+    try{
+      new Notification('⏰ 打卡提醒', { body:`「${h.name}」还没完成`, tag: h.id });
+    }catch(e){}
+    notifStore.ids.push(h.id);
+    changed = true;
+  }
+  if(changed) localStorage.setItem(NOTIF_KEY, JSON.stringify(notifStore));
+}
+
+/* ============================================================
+   定时与初始化
+============================================================ */
+let lastDayKey = todayKey();
+
+function tick(){
+  const d = todayKey();
+  if(d !== lastDayKey){ lastDayKey = d; render(); }
+  checkReminders();
+}
+
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden){ render(); checkReminders(); }
+});
+
+function makeIcon(){
+  const size = 180;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, size, size);
+  g.addColorStop(0, '#5b8cff');
+  g.addColorStop(1, '#a855f7');
+  x.fillStyle = g;
+  const r = 40;
+  x.beginPath();
+  x.moveTo(r, 0);
+  x.arcTo(size, 0, size, size, r);
+  x.arcTo(size, size, 0, size, r);
+  x.arcTo(0, size, 0, 0, r);
+  x.arcTo(0, 0, size, 0, r);
+  x.closePath();
+  x.fill();
+  x.fillStyle = '#fff';
+  x.font = 'bold 108px -apple-system, Helvetica, Arial, sans-serif';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.fillText('✓', size/2, size/2 + 6);
+  return c.toDataURL('image/png');
+}
+
+function setupPWA(){
+  const iconUrl = makeIcon();
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = iconUrl;
+  document.head.appendChild(link);
+
+  const manifest = {
+    name: '每日打卡',
+    short_name: '打卡',
+    start_url: '.',
+    display: 'standalone',
+    background_color: '#0d0f14',
+    theme_color: '#0d0f14',
+    icons: [{ src: iconUrl, sizes: '180x180', type: 'image/png', purpose: 'any' }]
+  };
+  try{
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    const ml = document.createElement('link');
+    ml.rel = 'manifest';
+    ml.href = URL.createObjectURL(blob);
+    document.head.appendChild(ml);
+  }catch(e){}
+}
+
+(function init(){
+  applyTheme();
+  setupPWA();
+  render();
+  setInterval(tick, 30000);
+})();
+</script>
+</body>
+</html>
